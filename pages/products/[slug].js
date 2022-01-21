@@ -1,7 +1,5 @@
 import React from 'react';
-import { useRouter } from 'next/router';
 import NextLink from 'next/link';
-import data from '../../utils/Data';
 import useStyles from '../../utils/Styles';
 import {
   Grid,
@@ -14,12 +12,12 @@ import {
 } from '@mui/material';
 import Layout from '../../components/Layout';
 import Image from 'next/image';
+import db from '../../utils/db';
+import Product from '../../models/Product';
 
-export default function ProductScreen() {
+export default function ProductScreen(props) {
+  const { product } = props;
   const classes = useStyles();
-  const router = useRouter();
-  const { slug } = router.query;
-  const product = data.products.find((a) => a.slug === slug);
   if (!product) {
     return <div>Product not found.</div>;
   }
@@ -99,4 +97,17 @@ export default function ProductScreen() {
       </Grid>
     </Layout>
   );
+}
+
+export async function getServerSideProps(context) {
+  const { params } = context;
+  const { slug } = params;
+  await db.connect();
+  const product = await Product.findOne({ slug }).lean();
+  await db.disconnect();
+  return {
+    props: {
+      product: db.convertDocToObj(product),
+    },
+  };
 }
